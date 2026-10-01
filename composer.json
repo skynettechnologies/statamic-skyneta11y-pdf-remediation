@@ -1,0 +1,52 @@
+{
+    "name": "skynettechnologies/statamic-skyneta11y-pdf-remediation",
+    "description": "SkynetA11y PDF Remediation addon for Statamic - upload or scan PDFs and remediate them for accessibility (WCAG, ADA, Section 508, EAA) with AI.",
+    "type": "statamic-addon",
+    "keywords": ["statamic", "statamic-addon", "laravel", "accessibility", "pdf", "remediation", "wcag", "ada", "section-508", "eaa"],
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Skynet Technologies USA LLC",
+            "email": "hello@skynettechnologies.com",
+            "homepage": "https://www.skynettechnologies.com",
+            "role": "Developer"
+        }
+    ],
+    "support": {
+        "email": "hello@skynettechnologies.com"
+    },
+    "autoload": {
+        "psr-4": {
+            "Skynettechnologies\\StatamicSkynetA11yPdfRemediation\\": "src"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Skynettechnologies\\StatamicSkynetA11yPdfRemediation\\Tests\\": "tests"
+        }
+    },
+    "require": {
+        "statamic/cms": "^5.0 || ^6.0"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^9.0 || ^10.0"
+    },
+    "config": {
+        "allow-plugins": {
+            "pixelfear/composer-dist-plugin": true
+        }
+    },
+    "extra": {
+        "statamic": {
+            "name": "SkynetA11y PDF Remediation",
+            "description": "SkynetA11y PDF Remediation addon for Statamic."
+        },
+        "laravel": {
+            "providers": [
+                "Skynettechnologies\\StatamicSkynetA11yPdfRemediation\\ServiceProvider"
+            ]
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}
