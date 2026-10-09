@@ -826,8 +826,10 @@
           '<div style="min-width:0">' + esc(doc.name) +
           '<span class="doc-sub">Source: ' +
           (doc.sourceUrl
-            ? '<a href="' + esc(doc.sourceUrl) + '" target="_blank" rel="noreferrer">' +
-              esc(doc.sourceUrl) + '</a>'
+            ? (/^https?:\/\//i.test(doc.sourceUrl)
+                ? '<a href="' + esc(doc.sourceUrl) + '" target="_blank" rel="noreferrer noopener">' +
+                  esc(doc.sourceUrl) + '</a>'
+                : esc(doc.sourceUrl))
             : 'Uploaded file') +
           '</span></div></div></td>' +
 

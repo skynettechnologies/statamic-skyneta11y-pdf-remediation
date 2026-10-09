@@ -15,17 +15,16 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Provision API Key
+    | Session URL (optional, advanced)
     |--------------------------------------------------------------------------
     |
-    | Sent as the X-Api-Key header on the provisioning call
-    | (POST /api/billing/provision-account). This is a browser-side value, which
-    | is acceptable behind the authenticated Control Panel. To keep it entirely
-    | off the page, front the provisioning call with your own server endpoint
-    | and set a session URL instead (see the addon README).
+    | When set, the dashboard calls THIS endpoint on your own server for a
+    | session token instead of calling provision-account directly with the API
+    | key, so the key never reaches the browser. Leave empty for the default
+    | browser-side flow. Injected as AIOPDF_CONFIG.sessionUrl only when non-empty.
     |
     */
-    'provision_api_key' => env('SKYNET_PDF_PROVISION_KEY', 'PDF-REMEDATION-PLAN-CHECK'),
+    'session_url' => env('SKYNET_PDF_SESSION_URL', ''),
 
     /*
     |--------------------------------------------------------------------------

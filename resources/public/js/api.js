@@ -152,25 +152,10 @@
    * link.
    */
   function adoptTokenFromQuery() {
-    try {
-      var params = new URLSearchParams(global.location.search);
-      var t = params.get('token');
-
-      if (!t) return;
-
-      setToken(t);
-      params.delete('token');
-
-      var query = params.toString();
-
-      global.history.replaceState(
-        {},
-        '',
-        global.location.pathname + (query ? '?' + query : '') + global.location.hash
-      );
-    } catch (e) {
-      /* malformed URL — nothing to adopt */
-    }
+    /* Intentionally a no-op. Adopting a session token from `?token=…` was
+       removed: a crafted link could plant someone else's session in an admin's
+       browser (session fixation). The session is only ever obtained by
+       provisioning through the dialog. Any stray `token` parameter is ignored. */
   }
 
   /**
@@ -210,49 +195,62 @@
   }
 
   /**
-   * POST {apiBaseUrl}/api/billing/provision-account — registers and signs in.
+   * Fetch the X-Api-Key dynamically from the platform get-key endpoint.
    *
-   * `identity` is the name/email/domain somebody submitted; omit it and the one
-   * already connected is used. Rejects on failure so the details dialog can show
-   * the service's own reason (a rejected domain, a malformed address) instead of
-   * a generic "could not sign in".
+   * GET {apiBaseUrl}/api/platform/get-key -> { "apiKey": "..." }
+   *
+   * No static value and no env/config: the key is fetched fresh from the API
+   * every time provisioning runs and passed straight to provision-account.
+   * Resolves to '' on failure so the service returns its own "missing API key".
    */
+  function fetchProvisionKey() {
+    return fetch(apiUrl('/platform/get-key'), {
+      method: 'GET',
+      headers: { Accept: 'application/json' }
+    })
+      .then(function (res) { return res.ok ? res.json() : {}; })
+      .then(function (data) { return (data && data.apiKey) || ''; })
+      .catch(function () { return ''; });
+  }
+
   function provisionSession(identity) {
     var c = config();
     var who = identity || account();
 
     if (!who) return Promise.resolve(false);
 
-    return fetch(apiUrl('/billing/provision-account'), {
-      method: 'POST',
-      headers: {
-        'X-Api-Key': c.provisionApiKey,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        name: who.name,
-        email: who.email,
-        company_name: who.name,
-        website: who.domain,
-        plan_id: c.planId,
-        country: c.country
-      })
-    }).then(function (res) {
-      return res
-        .json()
-        .catch(function () {
-          return {}; /* non-JSON response */
+    // 1) get the key from the API, 2) use it as X-Api-Key on provision-account.
+    return fetchProvisionKey().then(function (apiKey) {
+      return fetch(apiUrl('/billing/provision-account'), {
+        method: 'POST',
+        headers: {
+          'X-Api-Key': apiKey,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          name: who.name,
+          email: who.email,
+          company_name: who.name,
+          website: who.domain,
+          plan_id: c.planId,
+          country: c.country
         })
-        .then(function (data) {
-          if (!res.ok || !data || !data.token) throw ApiError(res.status, data);
+      }).then(function (res) {
+        return res
+          .json()
+          .catch(function () {
+            return {}; /* non-JSON response */
+          })
+          .then(function (data) {
+            if (!res.ok || !data || !data.token) throw ApiError(res.status, data);
 
-          setToken(data.token);
+            setToken(data.token);
 
-          return true;
-        });
+            return true;
+          });
+      });
     });
   }
-
   /**
    * Asks a host-supplied server endpoint for a session instead.
    *

@@ -4,7 +4,7 @@ The **SkynetA11y PDF Remediation** addon brings **PDF Accessibility Remediation 
 
 It fixes the barriers that make PDFs unusable with assistive technology: missing tags, incorrect reading order, inaccessible forms and tables, images without alternate text, and absent document structure, language and metadata.
 
-It supports compliance with **WCAG 2.0, 2.1, 2.2, PDF/UA, ADA, Section 508, AODA, and EN 301 549 (EAA)**. With plain-language explanations and before/after examples for every check, even non-technical users can understand what was fixed and why it mattered.
+It supports compliance with **WCAG 2.0, 2.1, 2.2, PDF/UA, ADA, Section 508, AODA, and EN 301 549 (EAA)**.
 
 It is a sibling of the `skynettechnologies/statamic-all-in-one-accessibility` and `skynettechnologies/statamic-skynet-accessibility-video-subtitle` addons and follows the same structure: a Control Panel tool under **Tools**.
 
@@ -28,11 +28,10 @@ Remediating them by hand is slow and expensive. This addon makes it a routine pa
 ## Key Features
 
 - **SkynetA11y PDF Remediation** – Automated repair of tags, reading order, alt text, headings, tables and metadata.
-- **PDF Accessibility Checker** – Every check reported individually, expandable   to a plain-language explanation and a before/after example.
+- **Remediated Library** – List your remediated documents and download the conformant files over an authenticated session.
 - **Upload or Crawl** – Add files by drag and drop, or sweep your website for every PDF it links to.
 - **Free Trial** – The free plan covers your first 5 pages; paid plans scale from 50 to 10,000 pages.
 - **Bulk Remediation** – Select any number of documents and process them in one run, with live progress.
-- **Deep Tag Scan** – Post-remediation verification against the document's tag tree, not just its declared metadata.
 - **Authenticated Downloads** – Remediated files are delivered over an authenticated session, never a public link.
 - **No Settings Screen** – Nothing to paste and nothing to wire up. One short dialog asks for a name, email and domain the first time it is needed, and never again.
 - **Integration with All in One Accessibility® Dashboard** – Plans, usage and billing stay in one place.
@@ -48,8 +47,8 @@ Remediating them by hand is slow and expensive. This addon makes it a routine pa
 
 ## Requirements
 
-- Statamic 5 or 6
-- PHP 8.1+
+- Statamic 5 (PHP 8.2+) or Statamic 6
+- PHP 8.2+
 
 ## Installation
 
@@ -70,6 +69,18 @@ Or copy the assets with the bundled command:
 php please skynet-pdf-remediation:copy-assets
 ```
 
+### Updating
+
+The addon's browser assets are published into your site's `public/` folder, so a
+later release does not overwrite them automatically. After updating, re-publish
+with `--force` (or re-run the copy command):
+
+```bash
+php artisan vendor:publish --tag="skynettechnologies/statamic-skyneta11y-pdf-remediation-assets" --force
+# or
+php please skynet-pdf-remediation:copy-assets
+```
+
 ## Usage
 
 Open **Tools -> SkynetA11y PDF Remediation** in the Control Panel. The workspace has three tabs:
@@ -86,7 +97,7 @@ Access is gated by the **Access SkynetA11y PDF Remediation** permission, assigna
 
 1. **Add Your PDFs** – Upload files, or crawl your website for every PDF it links to.
 2. **Run AI Remediation** – Select documents and process them in bulk; progress is reported live.
-3. **Review & Download** – Inspect each accessibility check with its explanation and before/after example, then download the conformant file.
+3. **Download** – Download the conformant files. Detailed per-check reports (plain-language explanations and before/after examples) are available on the hosted All in One Accessibility® dashboard.
 
 ## Who Can Benefit?
 
@@ -98,23 +109,63 @@ Access is gated by the **Access SkynetA11y PDF Remediation** permission, assigna
 - Publishers & Content Teams
 - E-commerce & SaaS Platforms
 
+## Configuration
+
+`config/skynet-pdf-remediation.php` (after publishing):
+
+| Key                 | Env                        | Default                                    |
+| ------------------- | -------------------------- | ------------------------------------------ |
+| `api_base`          | `SKYNET_PDF_API_BASE`      | `https://livepdfapi.skynettechnologies.us` |
+| `provision_api_key` | `SKYNET_PDF_PROVISION_KEY` | `PDF-REMEDATION-PLAN-CHECK`                |
+| `session_url`       | `SKYNET_PDF_SESSION_URL`   | *(empty)*                                  |
+| `dashboard_url`     | `SKYNET_PDF_DASHBOARD_URL` | `https://ada.skynettechnologies.us`        |
+| `plan_id`           | `SKYNET_PDF_PLAN_ID`       | `free`                                     |
+| `country`           | `SKYNET_PDF_COUNTRY`       | `US`                                       |
+
+These are injected into the dashboard as `window.AIOPDF_CONFIG`
+(`apiBaseUrl`, `provisionApiKey`, `dashboardUrl`, `planId`, `country`, and
+`sessionUrl` when set), together with `accountName` and `accountEmail` as
+pre-fills for the details dialog.
+
+### Keeping the API key off the page
+
+`provision_api_key` is sent to the browser so the dashboard can provision an
+account. This is acceptable behind the authenticated Control Panel, but if the
+key must never leave your server, set `session_url` (env `SKYNET_PDF_SESSION_URL`)
+to an endpoint on your own server. The dashboard then calls that endpoint for a
+session token instead of calling the provisioning API with the key; your endpoint
+performs the provisioning server-side and returns only the token. When
+`session_url` is set, the key is not required on the page.
+
+## Data & Privacy
+
+This addon talks to the remediation service directly from the browser. When used,
+the following is sent from the operator's browser to
+`https://livepdfapi.skynettechnologies.us`:
+
+- The **PDF files** you upload or that are found by the website scan.
+- The **name, email and domain** entered in the details dialog (pre-filled from
+  the logged-in user and the site), used to provision and identify the account.
+- The **website domain** crawled by the Website Scan tab.
+
+Documents and account data are processed and stored by Skynet Technologies to
+perform remediation and to deliver the remediated files back to you over an
+authenticated session; remediated files are not exposed through public links. For
+what is collected, how long it is retained, and your choices, see:
+
+- Privacy Policy: https://www.skynettechnologies.com/privacy-policy
+- Terms of Service: https://www.skynettechnologies.com/terms-conditions
+
 ## CORS Policy Configuration
 
-The dashboard calls the remediation API directly from the browser, so the API origin must allow your Control Panel origin. Ensure the following URLs are allowed in your CORS configuration or trusted domains list.
+You do **not** need to change your own server's CORS settings — only the remediation API's CORS matters, and that is handled on the Skynet side. The only thing relevant on your side is your Content-Security-Policy (below).
 
 | **Domain**                                 | **Description**                     | **Usage**                              |
 | ------------------------------------------ | ----------------------------------- | -------------------------------------- |
 | `https://livepdfapi.skynettechnologies.us` | SkynetA11y PDF Remediation API      | Documents, remediation jobs, downloads |
 | `https://ada.skynettechnologies.us`        | All in One Accessibility® Dashboard | Plan upgrades via autologin            |
 
-### Instructions
-
-1. Update your server's CORS configuration to include these URLs.
-2. Ensure wildcard subdomains (`*`) are supported where necessary.
-3. Verify the application functionality by testing requests to these domains.
-4. If issues persist, consult the documentation for CORS configuration guidance.
-
-If your site sends a `Content-Security-Policy`, both origins also need to be in its `connect-src`, or the browser will block the requests before they are made.
+If your site sends a `Content-Security-Policy`, add both origins to `connect-src`, or the browser will block the dashboard's requests before they are made. No other change is needed on your side.
 
 ## Screenshots
 

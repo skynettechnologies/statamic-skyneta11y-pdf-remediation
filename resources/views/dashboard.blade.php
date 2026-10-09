@@ -446,7 +446,7 @@
     // defaults to the current site host, which the operator can confirm or edit.
     window.AIOPDF_CONFIG = {
       apiBaseUrl: @json($api_base),
-      provisionApiKey: @json($provision_key),
+      @if(!empty($session_url)) sessionUrl: @json($session_url), @endif
       accountName: @json($user_name),
       accountEmail: @json($user_email),
       dashboardUrl: @json($dashboard_url),
@@ -459,5 +459,37 @@
   <script src="{{ asset('vendor/skynettechnologies/statamic-skyneta11y-pdf-remediation/js/account.js') }}"></script>
   <script src="{{ asset('vendor/skynettechnologies/statamic-skyneta11y-pdf-remediation/js/api.js') }}"></script>
   <script src="{{ asset('vendor/skynettechnologies/statamic-skyneta11y-pdf-remediation/js/app.js') }}"></script>
+  <!-- Keyboard / focus management for the dialogs: move focus in on open, trap
+       Tab, restore focus on close, and close on Escape. Observes the `hidden`
+       attribute so the app's own open/close logic is untouched. -->
+  <script>
+    (function () {
+      var ids = ['accountModal', 'confirmModal', 'partialModal'];
+      var SEL = 'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
+      var last = null;
+      function dialog(c){ return c.querySelector('[role="dialog"]') || c; }
+      function vis(el){ return el.offsetWidth>0||el.offsetHeight>0||el.getClientRects().length>0; }
+      function items(c){ return Array.prototype.filter.call(c.querySelectorAll(SEL), vis); }
+      function opened(c){ last=document.activeElement; var f=c.querySelector('input:not([type=hidden]),textarea,select')||items(c)[0]; if(f){try{f.focus();}catch(e){}} }
+      function closed(){ if(last&&last.focus){try{last.focus();}catch(e){}} last=null; }
+      function current(){ for(var i=0;i<ids.length;i++){var el=document.getElementById(ids[i]); if(el&&!el.hasAttribute('hidden'))return el;} return null; }
+      ids.forEach(function(id){
+        var el=document.getElementById(id); if(!el)return;
+        var was=el.hasAttribute('hidden');
+        new MutationObserver(function(){ var now=el.hasAttribute('hidden'); if(now===was)return; was=now; now?closed():opened(el); })
+          .observe(el,{attributes:true,attributeFilter:['hidden']});
+      });
+      document.addEventListener('keydown', function(e){
+        var c=current(); if(!c)return;
+        if(e.key==='Escape'){ var x=c.querySelector('[data-role="cancel"],[data-role="close"],.modal-close'); if(x){e.preventDefault();x.click();} return; }
+        if(e.key!=='Tab')return;
+        var list=items(dialog(c)); if(!list.length)return;
+        var first=list[0], lastEl=list[list.length-1], a=document.activeElement;
+        if(!dialog(c).contains(a)){ e.preventDefault(); first.focus(); return; }
+        if(e.shiftKey&&a===first){ e.preventDefault(); lastEl.focus(); }
+        else if(!e.shiftKey&&a===lastEl){ e.preventDefault(); first.focus(); }
+      });
+    })();
+  </script>
 </body>
 </html>

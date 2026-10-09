@@ -31,8 +31,7 @@
      * provisioning call server-side and returns just the session token — then
      * delete this value. See README.md.
      */
-    provisionApiKey: 'PDF-REMEDATION-PLAN-CHECK',
-
+    provisionApiKey: '',  // injected by the host (fetched from the platform get-key endpoint); never hardcoded here
     /* ---- The account -------------------------------------------------
      *
      * By default the module asks. Somebody opens it, fills in a name, email and

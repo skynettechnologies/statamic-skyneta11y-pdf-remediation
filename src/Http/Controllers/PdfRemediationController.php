@@ -19,6 +19,15 @@ class PdfRemediationController extends CpController
      */
     public function index(Request $request)
     {
+        // Enforce the permission on the controller too, not just the nav item,
+        // so a user without access cannot open the page or the ?frame=1 URL
+        // directly and see the provisioning config. Super users pass via can().
+        $user = $request->user();
+        abort_unless(
+            $user && $user->can('skynettechnologies/statamic-skyneta11y-pdf-remediation.access'),
+            403
+        );
+
         if ($request->boolean('frame')) {
             return $this->renderDashboard($request);
         }
@@ -52,7 +61,7 @@ class PdfRemediationController extends CpController
                 'user_name'     => $name,
                 'user_email'    => $email,
                 'api_base'      => rtrim(config('skynet-pdf-remediation.api_base'), '/'),
-                'provision_key' => config('skynet-pdf-remediation.provision_api_key'),
+                'session_url'   => config('skynet-pdf-remediation.session_url', ''),
                 'dashboard_url' => rtrim(config('skynet-pdf-remediation.dashboard_url'), '/'),
                 'plan_id'       => config('skynet-pdf-remediation.plan_id', 'free'),
                 'country'       => config('skynet-pdf-remediation.country', 'US'),
